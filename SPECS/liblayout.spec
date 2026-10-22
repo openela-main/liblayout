@@ -1,18 +1,21 @@
 Name: liblayout
 Version: 0.2.10
-Release: 17%{?dist}
+Release: 19%{?dist}
 Summary: CSS based layouting framework
-License: LGPLv2+ and UCD
+License: LGPL-2.1-or-later and Unicode-DFS-2016
 Group: System Environment/Libraries
 Source: http://downloads.sourceforge.net/jfreereport/liblayout-%{version}.zip
+Patch0: liblayout-0.2.10-remove-commons-logging.patch
 URL: http://reporting.pentaho.org/
-BuildRequires: ant, java-devel, jpackage-utils, flute, libloader
+BuildRequires: ant, java-21-openjdk-devel, jpackage-utils, flute, libloader
 BuildRequires: librepository, pentaho-libxml, libfonts, sac, libbase >= 1.1.3
 Buildroot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-Requires: java-headless, jpackage-utils, flute, libloader >= 1.1.3
+Requires: java-21-openjdk-headless >= 1:21, jpackage-utils, flute, libloader >= 1.1.3
 Requires: librepository >= 1.1.3, libfonts >= 1.1.3, sac
 Requires: pentaho-libxml, libbase >= 1.0.0
 BuildArch: noarch
+
+%global java_home /usr/lib/jvm/java-21-openjdk
 
 %description
 LibLayout is a layouting framework. It is based on the Cascading StyleSheets
@@ -30,12 +33,14 @@ Javadoc for %{name}.
 
 %prep
 %setup -q -c
+%patch0 -p1 -b .no_commons_logging
 find . -name "*.jar" -exec rm -f {} \;
 mkdir -p lib
 build-jar-repository -s -p lib flute libloader librepository libxml libfonts \
-    sac libbase commons-logging-api
+    sac libbase
 
 %build
+export JAVA_HOME=%{java_home}
 ant jar javadoc
 for file in README.txt licence-LGPL.txt ChangeLog.txt; do
     tr -d '\r' < $file > $file.new
@@ -59,6 +64,16 @@ cp -rp build/api $RPM_BUILD_ROOT%{_javadocdir}/%{name}
 %{_javadocdir}/%{name}
 
 %changelog
+* Mon Oct 19 2026 Tomas Popela <tpopela@redhat.com> - 0.2.10-19
+- Remove commons logging dependency
+- Related: RHEL-286491
+
+* Tue Oct 06 2026 Tomas Popela <tpopela@redhat.com> - 0.2.10-18
+- OpenJDK 8 won't be supported anymore on RHEL 8 starting from November 2026,
+  move to OpenJDK 21
+- Update the license to fix rpminspect test
+- Resolves: RHEL-275422
+
 * Tue Jul 17 2018 Caolán McNamara <caolanm@redhat.com> - 0.2.10-17
 - Resolves: rhbz#1597605 drop xml-commons-apis require
 
